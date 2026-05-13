@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { registerSchema } from "@/lib/validators/auth";
 import { signAccessToken, signRefreshToken, setAuthCookies } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,33 +17,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, email, password, phone } = validation.data;
+    const { username, name, email, password, phone } = validation.data;
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
+    const existingUsername = await prisma.user.findUnique({ where: { username } });
+    if (existingUsername) {
       return NextResponse.json(
-        { success: false, error: "Email đã được sử dụng" },
+        { success: false, error: "Tên đăng nhập đã được sử dụng" },
         { status: 409 }
       );
+    }
+
+    if (email) {
+      const existingEmail = await prisma.user.findUnique({ where: { email } });
+      if (existingEmail) {
+        return NextResponse.json(
+          { success: false, error: "Email đã được sử dụng" },
+          { status: 409 }
+        );
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = await prisma.user.create({
       data: {
+        username,
         name,
-        email,
+        email: email ?? null,
         password: hashedPassword,
         phone: phone ?? null,
-        role: "CUSTOMER",
+        role: UserRole.CUSTOMER,
+        status: "ACTIVE",
       },
     });
 
     const accessToken = await signAccessToken({
       userId: user.id,
-      email: user.email,
+      email: user.email ?? "",
       role: user.role,
       name: user.name,
+      username: user.username,
     });
     const refreshToken = await signRefreshToken({ userId: user.id });
 
@@ -54,6 +68,7 @@ export async function POST(request: NextRequest) {
           user: {
             userId: user.id,
             email: user.email,
+            username: user.username,
             name: user.name,
             role: user.role,
           },

@@ -1,14 +1,15 @@
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  email: z.string().email("Email không hợp lệ"),
+  username: z.string().min(1, "Tên đăng nhập không được trống"),
   password: z.string().min(1, "Mật khẩu không được trống"),
 });
 
 export const registerSchema = z
   .object({
+    username: z.string().min(3, "Tên đăng nhập phải có ít nhất 3 ký tự"),
     name: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
-    email: z.string().email("Email không hợp lệ"),
+    email: z.string().email("Email không hợp lệ").optional(),
     phone: z.string().optional(),
     password: z.string().min(8, "Mật khẩu phải có ít nhất 8 ký tự"),
     confirmPassword: z.string(),

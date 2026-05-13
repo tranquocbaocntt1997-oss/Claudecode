@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { Role } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET ?? "fallback-secret-change-in-production"
@@ -15,8 +15,9 @@ const REFRESH_TOKEN_EXPIRY = "7d";
 export type TokenPayload = {
   userId: string;
   email: string;
-  role: Role;
+  role: UserRole;
   name: string;
+  username: string;
 };
 
 export async function signAccessToken(payload: TokenPayload): Promise<string> {

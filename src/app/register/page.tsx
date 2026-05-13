@@ -76,6 +76,13 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
+              label="Tên đăng nhập"
+              placeholder="username"
+              error={errors.username?.message}
+              {...register("username")}
+            />
+
+            <Input
               label="Họ và tên"
               placeholder="Nguyễn Văn A"
               error={errors.name?.message}

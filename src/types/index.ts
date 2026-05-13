@@ -1,10 +1,11 @@
-import { Role, OrderStatus } from "@prisma/client";
+import { UserRole, RequestStatus } from "@prisma/client";
 
 export interface UserSession {
   userId: string;
   email: string;
   name: string;
-  role: Role;
+  role: UserRole;
+  username: string;
 }
 
 export interface ApiResponse<T = unknown> {
@@ -52,7 +53,7 @@ export interface DashboardStats {
   recentOrders: Array<{
     id: string;
     orderNumber: string;
-    status: OrderStatus;
+    status: RequestStatus;
     totalAmount: number;
     createdAt: Date;
     user: { name: string; email: string };

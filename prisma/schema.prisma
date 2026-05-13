@@ -6,46 +6,66 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
   ADMIN
   STAFF
   CUSTOMER
 }
 
-enum OrderStatus {
-  PENDING
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ContentStatus {
+  ACTIVE
+  INACTIVE
+  DRAFT
+}
+
+enum RequestStatus {
+  NEW
   PROCESSING
-  SHIPPED
-  DELIVERED
+  DONE
   CANCELLED
 }
 
+// ─── User ─────────────────────────────────────────────────────────────────────
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String     @id @default(cuid())
+  username  String     @unique
+  email     String?    @unique
   password  String
   name      String
   phone     String?
-  role      Role     @default(CUSTOMER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role      UserRole   @default(CUSTOMER)
+  status    UserStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
+  quoteRequests      QuoteRequest[]
+  createdProducts     Product[]      @relation("CreatedBy")
   orders             Order[]
-  createdProducts    Product[]  @relation("CreatedBy")
   forgotPasswordToken ForgotPasswordToken[]
 
   @@map("users")
 }
 
+// ─── Category ─────────────────────────────────────────────────────────────────
+
 model Category {
-  id          String    @id @default(cuid())
+  id          String        @id @default(cuid())
   name        String
-  slug        String    @unique
+  slug        String        @unique
   description String?
   image       String?
+  status      ContentStatus @default(ACTIVE)
   parentId    String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   parent   Category?  @relation("Subcategories", fields: [parentId], references: [id])
   children Category[]  @relation("Subcategories")
@@ -54,41 +74,49 @@ model Category {
   @@map("categories")
 }
 
+// ─── Product ──────────────────────────────────────────────────────────────────
+
 model Product {
-  id             String   @id @default(cuid())
+  id             String        @id @default(cuid())
   name           String
-  slug           String   @unique
+  slug           String        @unique
   description    String?
+  content        String?       // HTML content for full product page
   price          Float
-  stock          Int      @default(0)
+  originalPrice  Float?
+  stock          Int           @default(0)
+  sku            String?       @unique
   image          String?
-  images         String[] @default([])
+  images         String[]      @default([])
   specifications Json?
-  featured       Boolean  @default(false)
+  featured       Boolean       @default(false)
+  status         ContentStatus @default(ACTIVE)
   categoryId     String?
   createdById    String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   category   Category?   @relation(fields: [categoryId], references: [id])
-  createdBy  User?       @relation("CreatedBy", fields: [createdById], references: [id])
+  createdBy  User?      @relation("CreatedBy", fields: [createdById], references: [id])
   orderItems OrderItem[]
 
   @@map("products")
 }
 
+// ─── Order ───────────────────────────────────────────────────────────────────
+
 model Order {
-  id              String      @id @default(cuid())
-  orderNumber     String      @unique
+  id              String   @id @default(cuid())
+  orderNumber     String   @unique
   userId          String
-  status          OrderStatus @default(PENDING)
   totalAmount     Float
   shippingName    String
   shippingPhone   String
   shippingAddress String
   note            String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  status          RequestStatus @default(NEW)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   user  User        @relation(fields: [userId], references: [id])
   items OrderItem[]
@@ -108,6 +136,66 @@ model OrderItem {
 
   @@map("order_items")
 }
+
+// ─── Contact ─────────────────────────────────────────────────────────────────
+
+model Contact {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  company   String?
+  subject   String?
+  message   String
+  status    RequestStatus @default(NEW)
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contacts")
+}
+
+// ─── QuoteRequest ────────────────────────────────────────────────────────────
+
+model QuoteRequest {
+  id             String   @id @default(cuid())
+  requestNumber  String   @unique
+  userId        String
+  customerName  String
+  customerEmail String
+  customerPhone String
+  company       String?
+  products      Json     // Array of { productId, quantity, note }
+  message       String?
+  status        RequestStatus @default(NEW)
+  adminNote     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("quote_requests")
+}
+
+// ─── Post ────────────────────────────────────────────────────────────────────
+
+model Post {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  excerpt     String?
+  content     String        // HTML content
+  image       String?
+  author      String?
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("posts")
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
 
 model ForgotPasswordToken {
   id        String   @id @default(cuid())

@@ -83,11 +83,11 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
-              label="Email"
-              type="email"
-              placeholder="email@example.com"
-              error={errors.email?.message}
-              {...register("email")}
+              label="Tên đăng nhập"
+              type="text"
+              placeholder="Nhập tên đăng nhập"
+              error={errors.username?.message}
+              {...register("username")}
             />
 
             <div className="relative">
@@ -137,8 +137,8 @@ export default function LoginPage() {
 
           <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-500">
             <p className="font-medium mb-1">Tài khoản admin dev:</p>
-            <p>Email: tranquocbao@mdindustrial.vn</p>
-            <p>Mật khẩu: 12345678</p>
+            <p>Tên đăng nhập: tranquocbao</p>
+            <p>Mật khẩu: (xem ADMIN_PASSWORD trong .env)</p>
           </div>
         </div>
       </div>

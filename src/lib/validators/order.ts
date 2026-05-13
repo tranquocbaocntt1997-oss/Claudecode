@@ -16,7 +16,7 @@ export const orderSchema = z.object({
 });
 
 export const orderStatusSchema = z.object({
-  status: z.enum(["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"]),
+  status: z.enum(["NEW", "PROCESSING", "DONE", "CANCELLED"]),
 });
 
 export type OrderInput = z.infer<typeof orderSchema>;

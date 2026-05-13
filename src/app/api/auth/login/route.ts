@@ -16,12 +16,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, password } = validation.data;
+    const { username, password } = validation.data;
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { username } });
     if (!user) {
       return NextResponse.json(
-        { success: false, error: "Email hoặc mật khẩu không đúng" },
+        { success: false, error: "Tên đăng nhập hoặc mật khẩu không đúng" },
         { status: 401 }
       );
     }
@@ -29,16 +29,17 @@ export async function POST(request: NextRequest) {
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
       return NextResponse.json(
-        { success: false, error: "Email hoặc mật khẩu không đúng" },
+        { success: false, error: "Tên đăng nhập hoặc mật khẩu không đúng" },
         { status: 401 }
       );
     }
 
     const accessToken = await signAccessToken({
       userId: user.id,
-      email: user.email,
+      email: user.email ?? "",
       role: user.role,
       name: user.name,
+      username: user.username,
     });
     const refreshToken = await signRefreshToken({ userId: user.id });
 
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
         user: {
           userId: user.id,
           email: user.email,
+          username: user.username,
           name: user.name,
           role: user.role,
         },

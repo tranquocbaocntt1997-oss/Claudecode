@@ -35,9 +35,10 @@ export async function POST(request: NextRequest) {
 
     const newAccessToken = await signAccessToken({
       userId: user.id,
-      email: user.email,
+      email: user.email ?? "",
       role: user.role,
       name: user.name,
+      username: user.username,
     });
     const newRefreshToken = await signRefreshToken({ userId: user.id });
 

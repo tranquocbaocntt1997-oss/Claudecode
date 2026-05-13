@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
         prisma.product.count(),
         prisma.order.count(),
         prisma.user.count({ where: { role: "CUSTOMER" } }),
-        prisma.order.count({ where: { status: "PENDING" } }),
+        prisma.order.count({ where: { status: "NEW" as const } }),
         prisma.order.findMany({
           take: 10,
           orderBy: { createdAt: "desc" },

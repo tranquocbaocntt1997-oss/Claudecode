@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: md_industrial_postgres
+
+    restart: always
+
+    environment:
+      POSTGRES_USER: md_user
+      POSTGRES_PASSWORD: md_password
+      POSTGRES_DB: md_industrial_web
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - md_industrial_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  md_industrial_postgres_data:
