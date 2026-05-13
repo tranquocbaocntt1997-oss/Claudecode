@@ -53,24 +53,30 @@ Hệ thống auth dùng **JWT (JSON Web Token)** với 2 tokens:
    ↓
 2. POST /api/auth/login
    ↓
-3. Tìm user trong DB:
+3. Zod validation (loginSchema)
+   ↓
+4. Tìm user trong DB:
    prisma.user.findUnique({ where: { username } })
    ↓
-4. bcrypt.compare(inputPassword, storedHash)
+5a. Không tìm thấy → 401 "Tên đăng nhập hoặc mật khẩu không đúng"
    ↓
-5a. Không khớp → 401 "Tên đăng nhập hoặc mật khẩu không đúng"
+5b. Tìm thấy → bcrypt.compare(inputPassword, storedHash)
+      Sai → 401 "Tên đăng nhập hoặc mật khẩu không đúng"
+      Đúng → check user.status
+         user.status !== "ACTIVE" → 403 "Tài khoản đã bị vô hiệu hóa"
+         ACTIVE → sign tokens
    ↓
-5b. Khớp → sign tokens:
+6. sign tokens:
    - signAccessToken(payload)  → JWT string
    - signRefreshToken({userId}) → JWT string
    ↓
-6. Set 2 httpOnly cookies vào response
+7. Set 2 httpOnly cookies vào response
    ↓
-7. Return user info (không gửi token về client)
+8. Return user info (không gửi token về client)
    ↓
-8. Client: lưu user vào localStorage qua useAuth.login()
+9. Client: lưu user vào localStorage qua useAuth.login()
    ↓
-9. Redirect: ADMIN/STAFF → /dashboard, CUSTOMER → /
+10. Redirect: ADMIN/STAFF → /admin, CUSTOMER → /
 ```
 
 ## Registration Flow
@@ -104,15 +110,14 @@ Middleware chạy ở **edge** trước khi request đến server.
 // src/middleware.ts
 
 // 1. Đọc cookies
-const token = cookies.get("access_token")?.value
+const token = request.cookies.get("access_token")?.value
 
-// 2. Verify token
-const payload = jwtVerify(token, JWT_SECRET)
+// 2. Verify token (nếu có)
+const payload = jwtVerify(token, JWT_SECRET) ?? null
 
 // 3. Check route patterns
 if (isAdminPath && !payload) redirect("/login")
 if (isAdminPath && payload.role === "CUSTOMER") redirect("/")
-if (isAuthPath && payload) redirect("/dashboard")
 ```
 
 ### Route Protection Matrix
@@ -121,11 +126,12 @@ if (isAuthPath && payload) redirect("/dashboard")
 |-------|-------|-------|----------|-----------|
 | `/` | ✅ | ✅ | ✅ | ✅ |
 | `/products` | ✅ | ✅ | ✅ | ✅ |
-| `/login` | ✅* | ✅* | ✅* | ✅ |
-| `/register` | ✅* | ✅* | ✅* | ✅ |
+| `/login` | ✅ | ✅ | ✅ | ✅ |
+| `/register` | ✅ | ✅ | ✅ | ✅ |
 | `/dashboard/*` | ✅ | ✅ | ❌ → `/` | ❌ → `/login` |
+| `/admin/*` | ✅ | ✅ | ❌ → `/` | ❌ → `/login` |
 
-*redirects to dashboard if already logged in
+`/login` và `/register` luôn hiển thị trang login/register — không redirect khi đã login. Cho phép user đăng xuất và đăng nhập tài khoản khác.
 
 ## Role-Based Access trong API
 

@@ -7,7 +7,7 @@ const JWT_SECRET = new TextEncoder().encode(
 
 const publicPaths = ["/", "/products", "/about", "/contact"];
 const authPaths = ["/login", "/register"];
-const adminPaths = ["/dashboard"];
+const adminPaths = ["/dashboard", "/admin"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -53,9 +53,10 @@ export async function middleware(request: NextRequest) {
     pathname === "/register";
 
   // If accessing auth page while logged in, redirect
-  if (isAuthPath && payload) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
+  // (disabled: allows users to logout and login as different account)
+  // if (isAuthPath && payload) {
+  //   return NextResponse.redirect(new URL("/admin", request.url));
+  // }
 
   // If accessing admin page while not logged in
   if (isAdminPath && !payload) {

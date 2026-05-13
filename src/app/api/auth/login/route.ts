@@ -34,6 +34,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (user.status !== "ACTIVE") {
+      return NextResponse.json(
+        { success: false, error: "Tài khoản đã bị vô hiệu hóa" },
+        { status: 403 }
+      );
+    }
+
     const accessToken = await signAccessToken({
       userId: user.id,
       email: user.email ?? "",
