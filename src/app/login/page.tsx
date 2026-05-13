@@ -8,13 +8,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
+import { PasswordInput } from "@/components/forms/PasswordInput";
+import { AuthCard } from "@/components/ui/AuthCard";
 import { loginSchema, LoginInput } from "@/lib/validators/auth";
 import { useAuth } from "@/hooks/useAuth";
-import { Eye, EyeOff } from "lucide-react";
+import { ShieldCheck, UserCircle } from "lucide-react";
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
@@ -29,7 +30,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginInput) => {
     setIsLoading(true);
-    setError(null);
+    setServerError(null);
 
     try {
       const res = await fetch("/api/auth/login", {
@@ -41,12 +42,12 @@ export default function LoginPage() {
       const json = await res.json();
 
       if (!res.ok || !json.success) {
-        setError(json.error ?? "Đăng nhập thất bại");
+        setServerError(json.error ?? "Đăng nhập thất bại");
         return;
       }
 
       const { user } = json.data;
-      login("", user);
+      login(user as any);
 
       if (user.role === "ADMIN" || user.role === "STAFF") {
         router.push("/dashboard");
@@ -54,94 +55,81 @@ export default function LoginPage() {
         router.push("/");
       }
     } catch {
-      setError("Có lỗi xảy ra, vui lòng thử lại");
+      setServerError("Có lỗi xảy ra, vui lòng thử lại sau.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#1e3a5f]">MD Industrial</h1>
-          <p className="text-gray-500 mt-1">
-            Hệ thống quản lý băng tải, bạc đạn, dây curoa
-          </p>
-        </div>
+    <AuthCard
+      title="Đăng nhập"
+      subtitle="Chào mừng bạn quay trở lại"
+      footer={
+        <>
+          Chưa có tài khoản?{" "}
+          <Link
+            href="/register"
+            className="text-[#1e3a5f] font-medium hover:underline"
+          >
+            Đăng ký ngay
+          </Link>
+        </>
+      }
+    >
+      {serverError && (
+        <Alert variant="error" className="mb-5">
+          {serverError}
+        </Alert>
+      )}
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
-            Đăng nhập
-          </h2>
-
-          {error && (
-            <Alert variant="error" className="mb-4">
-              {error}
-            </Alert>
-          )}
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input
-              label="Tên đăng nhập"
-              type="text"
-              placeholder="Nhập tên đăng nhập"
-              error={errors.username?.message}
-              {...register("username")}
-            />
-
-            <div className="relative">
-              <Input
-                label="Mật khẩu"
-                type={showPassword ? "text" : "password"}
-                placeholder="Nhập mật khẩu"
-                error={errors.password?.message}
-                {...register("password")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-
-            <div className="flex justify-end">
-              <Link
-                href="/forgot-password"
-                className="text-sm text-[#1e3a5f] hover:underline"
-              >
-                Quên mật khẩu?
-              </Link>
-            </div>
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
-            </Button>
-          </form>
-
-          <p className="text-center text-sm text-gray-600 mt-6">
-            Chưa có tài khoản?{" "}
-            <Link
-              href="/register"
-              className="text-[#1e3a5f] font-medium hover:underline"
-            >
-              Đăng ký ngay
-            </Link>
-          </p>
-
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-500">
-            <p className="font-medium mb-1">Tài khoản admin dev:</p>
-            <p>Tên đăng nhập: tranquocbao</p>
-            <p>Mật khẩu: (xem ADMIN_PASSWORD trong .env)</p>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        {/* Username or Email */}
+        <div className="relative">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <UserCircle className="w-5 h-5" />
           </div>
+          <Input
+            placeholder="Tên đăng nhập hoặc email"
+            error={errors.username?.message}
+            className="pl-10"
+            autoComplete="username"
+            {...register("username")}
+          />
         </div>
+
+        {/* Password */}
+        <PasswordInput
+          placeholder="Mật khẩu"
+          error={errors.password?.message}
+          autoComplete="current-password"
+          {...register("password")}
+        />
+
+        {/* Forgot Password */}
+        <div className="flex justify-end">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-[#1e3a5f] hover:text-[#2d5a8a] hover:underline transition-colors"
+          >
+            Quên mật khẩu?
+          </Link>
+        </div>
+
+        {/* Submit */}
+        <Button type="submit" className="w-full" isLoading={isLoading}>
+          Đăng nhập
+        </Button>
+      </form>
+
+      {/* Security Note */}
+      <div className="mt-6 pt-5 border-t border-gray-100 flex items-start gap-3">
+        <ShieldCheck className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+        <p className="text-xs text-gray-400 leading-relaxed">
+          Thông tin đăng nhập của bạn được bảo mật bằng mã hóa SSL.
+          Chúng tôi không bao giờ chia sẻ thông tin cá nhân của bạn.
+        </p>
       </div>
-    </div>
+    </AuthCard>
   );
 }

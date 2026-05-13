@@ -2,17 +2,18 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
 import Link from "next/link";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
-import { Card, CardContent } from "@/components/ui/Card";
+import { AuthCard } from "@/components/ui/AuthCard";
 import { forgotPasswordSchema, ForgotPasswordInput } from "@/lib/validators/auth";
+import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 
 export default function ForgotPasswordPage() {
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [serverMessage, setServerMessage] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -25,8 +26,8 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotPasswordInput) => {
     setIsLoading(true);
-    setError(null);
-    setMessage(null);
+    setServerError(null);
+    setServerMessage(null);
 
     try {
       const res = await fetch("/api/auth/forgot-password", {
@@ -38,72 +39,100 @@ export default function ForgotPasswordPage() {
       const json = await res.json();
 
       if (!res.ok || !json.success) {
-        setError(json.error ?? "Có lỗi xảy ra");
+        setServerError(json.error ?? "Có lỗi xảy ra");
         return;
       }
 
-      setMessage(json.message);
+      setServerMessage(json.message);
     } catch {
-      setError("Có lỗi xảy ra, vui lòng thử lại");
+      setServerError("Có lỗi xảy ra, vui lòng thử lại sau.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#1e3a5f]">MD Industrial</h1>
+    <AuthCard
+      title="Quên mật khẩu"
+      subtitle="Nhập email để nhận link đặt lại mật khẩu"
+      footer={
+        <>
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-1 text-[#1e3a5f] font-medium hover:underline"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Quay về đăng nhập
+          </Link>
+        </>
+      }
+    >
+      {/* Success */}
+      {serverMessage && (
+        <div className="mb-5 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-green-800 font-medium">
+                Gửi yêu cầu thành công!
+              </p>
+              <p className="text-sm text-green-700 mt-1">{serverMessage}</p>
+              <p className="text-xs text-green-600 mt-2">
+                Kiểm tra console dev server để xem token reset (mock mode).
+              </p>
+            </div>
+          </div>
         </div>
+      )}
 
-        <Card>
-          <CardContent className="p-8">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2 text-center">
-              Quên mật khẩu
-            </h2>
-            <p className="text-gray-500 text-sm text-center mb-6">
-              Nhập email của bạn để nhận link đặt lại mật khẩu
-            </p>
+      {/* Error */}
+      {serverError && (
+        <Alert variant="error" className="mb-5">
+          {serverError}
+        </Alert>
+      )}
 
-            {message && (
-              <Alert variant="success" className="mb-4">
-                {message}
-              </Alert>
-            )}
+      {/* Form */}
+      {!serverMessage && (
+        <>
+          <p className="text-sm text-gray-500 mb-5 leading-relaxed">
+            Nếu email của bạn tồn tại trong hệ thống, chúng tôi sẽ gửi một
+            link đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.
+          </p>
 
-            {error && (
-              <Alert variant="error" className="mb-4">
-                {error}
-              </Alert>
-            )}
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div className="relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                <Mail className="w-5 h-5" />
+              </div>
               <Input
-                label="Email"
                 type="email"
-                placeholder="email@example.com"
+                placeholder="Nhập địa chỉ email của bạn"
                 error={errors.email?.message}
+                className="pl-10"
+                autoComplete="email"
                 {...register("email")}
               />
+            </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Đang gửi..." : "Gửi link đặt lại"}
-              </Button>
-            </form>
+            <Button type="submit" className="w-full" isLoading={isLoading}>
+              Gửi link đặt lại
+            </Button>
+          </form>
+        </>
+      )}
 
-            <p className="text-center text-sm text-gray-600 mt-6">
-              Nhớ mật khẩu rồi?{" "}
-              <Link
-                href="/login"
-                className="text-[#1e3a5f] font-medium hover:underline"
-              >
-                Đăng nhập
-              </Link>
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+      {/* Back Link */}
+      {serverMessage && (
+        <div className="mt-5">
+          <Link
+            href="/login"
+            className="block w-full text-center text-sm text-[#1e3a5f] font-medium hover:underline py-2.5 border border-[#1e3a5f] rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Quay về đăng nhập
+          </Link>
+        </div>
+      )}
+    </AuthCard>
   );
 }

@@ -8,13 +8,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Alert";
+import { PasswordInput } from "@/components/forms/PasswordInput";
+import { AuthCard } from "@/components/ui/AuthCard";
 import { registerSchema, RegisterInput } from "@/lib/validators/auth";
 import { useAuth } from "@/hooks/useAuth";
-import { Eye, EyeOff } from "lucide-react";
+import { UserCircle, Mail, Phone, User, ShieldCheck } from "lucide-react";
 
 export default function RegisterPage() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
@@ -29,7 +30,7 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterInput) => {
     setIsLoading(true);
-    setError(null);
+    setServerError(null);
 
     try {
       const res = await fetch("/api/auth/register", {
@@ -41,115 +42,138 @@ export default function RegisterPage() {
       const json = await res.json();
 
       if (!res.ok || !json.success) {
-        setError(json.error ?? "Đăng ký thất bại");
+        setServerError(json.error ?? "Đăng ký thất bại");
         return;
       }
 
       const { user } = json.data;
-      login("", user);
+      login(user as any);
       router.push("/");
     } catch {
-      setError("Có lỗi xảy ra, vui lòng thử lại");
+      setServerError("Có lỗi xảy ra, vui lòng thử lại sau.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#1e3a5f]">MD Industrial</h1>
-          <p className="text-gray-500 mt-1">Tạo tài khoản mới</p>
+    <AuthCard
+      title="Đăng ký tài khoản"
+      subtitle="Tạo tài khoản để truy cập hệ thống"
+      footer={
+        <>
+          Đã có tài khoản?{" "}
+          <Link
+            href="/login"
+            className="text-[#1e3a5f] font-medium hover:underline"
+          >
+            Đăng nhập
+          </Link>
+        </>
+      }
+    >
+      {serverError && (
+        <Alert variant="error" className="mb-5">
+          {serverError}
+        </Alert>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Username */}
+        <div className="relative">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <UserCircle className="w-5 h-5" />
+          </div>
+          <Input
+            placeholder="Tên đăng nhập"
+            error={errors.username?.message}
+            className="pl-10"
+            autoComplete="username"
+            {...register("username")}
+          />
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
-            Đăng ký
-          </h2>
-
-          {error && (
-            <Alert variant="error" className="mb-4">
-              {error}
-            </Alert>
-          )}
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input
-              label="Tên đăng nhập"
-              placeholder="username"
-              error={errors.username?.message}
-              {...register("username")}
-            />
-
-            <Input
-              label="Họ và tên"
-              placeholder="Nguyễn Văn A"
-              error={errors.name?.message}
-              {...register("name")}
-            />
-
-            <Input
-              label="Email"
-              type="email"
-              placeholder="email@example.com"
-              error={errors.email?.message}
-              {...register("email")}
-            />
-
-            <Input
-              label="Số điện thoại (tùy chọn)"
-              type="tel"
-              placeholder="0909123456"
-              error={errors.phone?.message}
-              {...register("phone")}
-            />
-
-            <div className="relative">
-              <Input
-                label="Mật khẩu"
-                type={showPassword ? "text" : "password"}
-                placeholder="Ít nhất 8 ký tự"
-                error={errors.password?.message}
-                {...register("password")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-9 text-gray-400 hover:text-gray-600"
-              >
-                {showPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-
-            <Input
-              label="Xác nhận mật khẩu"
-              type={showPassword ? "text" : "password"}
-              placeholder="Nhập lại mật khẩu"
-              error={errors.confirmPassword?.message}
-              {...register("confirmPassword")}
-            />
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Đang đăng ký..." : "Đăng ký"}
-            </Button>
-          </form>
-
-          <p className="text-center text-sm text-gray-600 mt-6">
-            Đã có tài khoản?{" "}
-            <Link
-              href="/login"
-              className="text-[#1e3a5f] font-medium hover:underline"
-            >
-              Đăng nhập
-            </Link>
-          </p>
+        {/* Name */}
+        <div className="relative">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <User className="w-5 h-5" />
+          </div>
+          <Input
+            placeholder="Họ và tên"
+            error={errors.name?.message}
+            className="pl-10"
+            autoComplete="name"
+            {...register("name")}
+          />
         </div>
+
+        {/* Email */}
+        <div className="relative">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <Mail className="w-5 h-5" />
+          </div>
+          <Input
+            type="email"
+            placeholder="Email (tùy chọn)"
+            error={errors.email?.message}
+            className="pl-10"
+            autoComplete="email"
+            {...register("email")}
+          />
+        </div>
+
+        {/* Phone */}
+        <div className="relative">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <Phone className="w-5 h-5" />
+          </div>
+          <Input
+            type="tel"
+            placeholder="Số điện thoại (tùy chọn)"
+            error={errors.phone?.message}
+            className="pl-10"
+            autoComplete="tel"
+            {...register("phone")}
+          />
+        </div>
+
+        {/* Password */}
+        <PasswordInput
+          placeholder="Mật khẩu (ít nhất 8 ký tự)"
+          error={errors.password?.message}
+          autoComplete="new-password"
+          {...register("password")}
+        />
+
+        {/* Confirm Password */}
+        <PasswordInput
+          placeholder="Xác nhận mật khẩu"
+          error={errors.confirmPassword?.message}
+          autoComplete="new-password"
+          {...register("confirmPassword")}
+        />
+
+        {/* Submit */}
+        <Button type="submit" className="w-full" isLoading={isLoading}>
+          Tạo tài khoản
+        </Button>
+      </form>
+
+      {/* Terms Note */}
+      <div className="mt-5 pt-4 border-t border-gray-100 flex items-start gap-3">
+        <ShieldCheck className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+        <p className="text-xs text-gray-400 leading-relaxed">
+          Bằng việc đăng ký, bạn đồng ý với{" "}
+          <Link href="/terms" className="text-[#1e3a5f] hover:underline">
+            Điều khoản sử dụng
+          </Link>{" "}
+          và{" "}
+          <Link href="/privacy" className="text-[#1e3a5f] hover:underline">
+            Chính sách bảo mật
+          </Link>{" "}
+          của MD Industrial.
+        </p>
       </div>
-    </div>
+    </AuthCard>
   );
 }
